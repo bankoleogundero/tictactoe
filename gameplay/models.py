@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.functional import cached_property
+from django_prometheus.models import ExportModelOperationsMixin
 
 GAME_STATUS_CHOICES = (
     ('F','First Player To Move'),
@@ -26,7 +27,7 @@ class GamesQuerySet(models.QuerySet):
         )
 
 @python_2_unicode_compatible
-class Game(models.Model):
+class Game(ExportModelOperationsMixin('game'), models.Model):
     first_player = models.ForeignKey(User, related_name="games_first_player")
     second_player = models.ForeignKey(User, related_name="games_second_player")
     start_time = models.DateTimeField(auto_now_add=True)
@@ -52,7 +53,7 @@ class Game(models.Model):
         return "{0} vs {1}".format(self.first_player, self.second_player)
 
 @python_2_unicode_compatible    
-class Move(models.Model):
+class Move(ExportModelOperationsMixin('move'), models.Model):
     x = models.IntegerField()
     y = models.IntegerField()
     comment = models.CharField(max_length=300, blank=True)

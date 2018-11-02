@@ -1,24 +1,11 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: postgres-config
-  namespace: tictactoe
-  labels:
-    app: postgres
-data:
-  POSTGRES_DB: postgresdb
-  POSTGRES_USER: #{POSTGRES_USERNAME}
-  POSTGRES_PASSWORD: #{POSTGRES_PASSWORD}
----
-
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: postgres-pv-volume
+  name: mysql-pv-volume
   namespace: tictactoe
   labels:
     type: local
-    app: postgres
+    app: mysql
 spec:
   storageClassName: manual
   capacity:
@@ -26,76 +13,69 @@ spec:
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "/mnt/data"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: postgres-pv-claim
-  namespace: tictactoe
-  labels:
-    app: postgres
-spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 5Gi
+    path: "/var/lib/mysql"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres
+  name: mysql
   namespace: tictactoe
   labels:
-    app: postgres
+    app: mysql
 spec:
   type: NodePort
   ports:
-   - port: 5432
+   - port: 3306
   selector:
-   app: postgres
+   app: mysql
 ---
-apiVersion: extensions/v1beta1
-kind: StatefulSet
+apiVersion: extensions/v1
+kind: Deployment
 metadata:
-  name: postgres
+  name: mysql
   namespace: tictactoe
+  labels:
+    app: mysql
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
   template:
     metadata:
       labels:
-        app: postgres
+        app: mysql
     spec:
       containers:
-        - name: postgres
-          image: postgres:10.4
-          imagePullPolicy: "IfNotPresent"
+        - image: mysql:5.6
+          name: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql
+                  key: password
           ports:
-            - containerPort: 5432
-          envFrom:
-            - configMapRef:
-                name: postgres-config
+            - containerPort: 3306
+              name: mysql
           volumeMounts:
-            - mountPath: /var/lib/postgresql/data
-              name: postgredb
+            - name: mysql-pv-volume
+              mountPath: /var/lib/mysql
       volumes:
-        - name: postgredb
+        - name: mysql-pv-volume
           persistentVolumeClaim:
-            claimName: postgres-pv-claim
+            claimName: mysql-volumeclaim
 ---
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: postgres
+  name: mysql
   namespace: tictactoe
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: StatefulSet
-    name: postgres
+    name: mysql
   minReplicas: 1
   maxReplicas: 10
   metrics:

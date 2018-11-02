@@ -21,5 +21,6 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^player/', include('player.urls')),
     url(r'^games/', include('gameplay.urls')),
-    url(r'^$', welcome, name="tictactoe_welcome")
+    url(r'^$', welcome, name="tictactoe_welcome"),
+    url('', include('django_prometheus.urls')),
 ]

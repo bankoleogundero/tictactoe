@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django_prometheus.models import ExportModelOperationsMixin
 
-class Invitation(models.Model):
+class Invitation(ExportModelOperationsMixin('invitation'), models.Model):
     from_user = models.ForeignKey(User, related_name="invitations_sent", on_delete=models.CASCADE)
     to_user = models.ForeignKey(
         User, 
