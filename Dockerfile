@@ -1,8 +1,9 @@
-FROM python:3.7.1-alpine3.8
+FROM python:3.6.7-alpine3.8
 LABEL Author = "Bankole Ogundero"
-ENV PYTHONUNBUFFERED 1
-RUN mkdir /code
-COPY requirements.txt /code
-WORKDIR /code
-RUN pip install -r requirements.txt
-ADD . /code
+RUN mkdir /app
+COPY . /app
+WORKDIR /app
+RUN pip install -r requirements.txt && \
+        python manage.py collectstatic --noinput
+EXPOSE 8001
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8001"]

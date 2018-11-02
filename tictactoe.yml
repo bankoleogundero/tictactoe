@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tictactoe
+  namespace: tictactoe
+spec:
+  type: ClusterIP
+  selector:
+    app: tictactoe
+  ports:
+  - name: tictactoe
+    port: 8000
+  - name: prometheus-metrics
+    port: 8001
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: tictactoe
+  namespace: tictactoe
+spec:
+  serviceName: tictactoe
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: tictactoe
+    spec:
+      containers:
+      - name: tictactoe
+        image: #{CONTAINER_REPOSITORY}
+        resources:
+          limits:
+            cpu: "1"
+          requests:
+            cpu: "0.5"
+        args:
+        - -cpus
+        - "2"
+        imagePullPolicy: Always
+        ports:
+        - name: tictactoe
+          containerPort: 8000
+        - name: prometheus-metrics
+          containerPort: 8001
+        volumeMounts:
+        - mountPath: /opt/tictactoe
+          name: tictactoe-volume
+      dnsConfig:
+        options:
+        - name: single-request-reopen
+      imagePullSecrets:
+      - name: docker-secret    
+      volumes:
+      - name: tictactoe-volume
+        persistentVolumeClaim:
+          claimName: tictactoe-pvc
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tictactoe
+  namespace: tictactoe
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tictactoe
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+status:
+  observedGeneration: 1
+  lastScaleTime: <some-time>
+  currentReplicas: 1
+  desiredReplicas: 2
+  currentMetrics:
+  - type: Resource
+    resource:
+      name: cpu
+      current:
+        averageUtilization: 0
+        averageValue: 0

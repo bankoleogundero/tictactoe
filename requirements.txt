@@ -1,3 +1,7 @@
- Django==1.11.1
- statsd==3.2.1
- django-prometheus=1.0.15
+Django==1.11.1
+statsd==3.2.1
+django-prometheus==1.0.15
+django-crispy-forms==1.6.1
+MySQL-python==1.2.5
+psycopg2==2.6.1
+python-memcached==1.57
