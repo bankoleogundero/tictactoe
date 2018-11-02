@@ -41,7 +41,6 @@ node ('kubernetes'){
             writeFile file: 'Dockerfile', text: 'FROM django:onbuild'
           }
           sh "docker build --rm -t ${clusterImageName} ."
-         // sh "docker push ${clusterImageName}"
 
           def rc = getKubernetesJson {
             port = 8000
@@ -58,13 +57,10 @@ node ('kubernetes'){
         approve{
           room = null
           version = canaryVersion
-          console = fabric8Console
-          environment = envStage
+          console = appconsole
+          environment = prod
         }
 
-        // stage 'promote'
-        //   sh "docker tag -f ${clusterImageName} ${dockerhubImageName}"
-        //   sh "docker push -f ${dockerhubImageName}"
 
         stage 'Rolling upgrade Production'
           kubernetesApply(file: rc, environment: envProd)
